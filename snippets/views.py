@@ -6,45 +6,49 @@ from .models import Snippet
 from .serializers import SnippetSerializer
 
 
-@api_view(['GET','POST'])
-def snippet_list(request):
+class SnippetList(APIView):
     """
     list all the snippets and create new snippet
 
     """
 
-    if request.method=='GET':                                 
+    def get(self, request, format=None):                                 
         snippets = Snippet.objects.all()
         serializer = SnippetSerializer(snippets, many = True)
         return Response(serializer.data)
 
-    elif request.method=='POST':                                                 
+    def post(self, request, format=None):                                                 
         serializer = SnippetSerializer(data=request.data)
         if serializer.is_valid():                                   
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET','PUT','DELETE'])
-def snippet_detail(request,pk):
+class SnippetDetail(APIView):
 
     """
     Now this contain detailed view of a snippet, it can be updated, deleted or retrived
     """
-    try:                                                
-        snippet = Snippet.objects.get(pk=pk)
-    except Snippet.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    def get_object(self,pk):    
+        try:                                                
+            snippet = Snippet.objects.get(pk=pk)
+        except Snippet.DoesNotExist:
+            return Http404
 
-    if request.method=='GET':
-        return Response(SnippetSerializer(snippet).data)
+    def get(self, request, pk, format=None):
+        snippet = self.get_object(pk)
+        serializer = SnippetSerializer(snippet)
+        return Response(serializer.data)
+        
 
-    elif request.method=='PUT':
+    def put(self, request, pk, format=None):
+        snippet = self.get_object(pk)
         serializer = SnippetSerializer(snippet, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data) 
         return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)   
-    elif request.method=='DELETE':
+    def delete(self, request, pk, format=None):
+        snippet = self.get_object(pk)    
         snippet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
